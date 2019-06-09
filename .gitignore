@@ -1,0 +1,6 @@
+*.py.c
+*.hi
+*.o
+arggen
+args
+args.hs
