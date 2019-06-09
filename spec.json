@@ -1,0 +1,44 @@
+{
+	"$schema": "../argspec/arguments.schema.json",
+	"program": "test-program",
+	"args": [
+		{
+			"dest": "help",
+			"short": "-h",
+			"long": "--help",
+			"type": "flag",
+			"default": "False"
+		},
+		{
+			"dest": "verbose",
+			"short" : "-v",
+			"long" : "--verbose",
+			"type" : "string",
+			"default": "Hello, world!"
+		},
+		{
+			"mandatory": true, 
+			"dest": "file",
+			"short": "-i",
+			"long": "--input",
+			"type": "string",
+			"default": "Hello, world!"
+		},
+		{
+			"mandatory": true,
+			"dest": "x",
+			"short": "-x",
+			"long": "-asf",
+			"type": "int",
+			"default": "0"
+		},
+		{
+			"mandatory": true,
+			"dest": "out",
+			"short": "-o",
+			"long": "--output-to",
+			"type": "string",
+			"default": "-"
+		}
+	]
+}
