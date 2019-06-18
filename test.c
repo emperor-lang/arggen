@@ -6,9 +6,12 @@ int main(int argc, char **argv)
 {
 	printf("%s\n", "Parsing arguments...");
 	args_t *args = parseArgs(argc, argv);
-	printf("%s\n", "Parsing arguments2...");
+	printf("%s\n", "Done parsing arguments...");
 	printf("%d\n", args->x);
-	return 0;
 
 	// TODO: initialise strings
+	// TODO: add a destructor
+
+	free(args);
+	return 0;
 }
