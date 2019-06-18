@@ -113,36 +113,99 @@ def toHaskell(spec:dict) -> int:
     print('\n'.join(matchLines), end='\n\n')
     # print('\n'.join(validatorLines))
 
-def toC(spec:dict) -> int:
+def toC(spec:dict, headerFile:str) -> int:
     args:list = spec['args']
     program = spec['program'] if 'program' in spec else 'asdf'
+    argTypeMap:dict = {
+        'flag' : 'bool',
+        'string' : 'char*',
+        'int' : 'int',
+        'char' : 'char'
+    }
 
     argSpecSetup:str = (
-        f'#include "{program}.h"'
+        f'#include "{headerFile}"'
     )
 
     helpLines:list = []
     parserParts:list = []
+    argsStructParts:list = []
+    headerLines:list = []
 
     for arg in args:
         parserActions:list = []
+        argType = argTypeMap[arg['type']]
+        argsStructParts.append('\t%s %s;' % (argType, arg['dest']))
         if arg['type'] == 'flag':
             parserActions = [f"\t\t\targs.{arg['dest']} = true;"]
         else:
-            printe("Unrecognised type: %s" % arg['type'])
+            argGrabber:str = ''
+            argDest:str = arg['dest']
+            if arg['type'] == 'string':
+                argGrabber = 'argv[++i]'
+            elif arg['type'] == 'char':
+                argGrabber = 'argv[++i][0]'
+            elif arg['type'] == 'int':
+                argGrabber = 'atoi(argv[++i])'
+            parserActions = [
+                    '\t\t\tif (i + 1 < argc)',
+                    '\t\t\t{', 
+                    f'\t\t\t\targs.{argDest} = {argGrabber};', 
+                    '\t\t\t}',
+                    '\t\t\telse',
+                    '\t\t\t{',
+                    f'\t\t\t\tfprintf(stderr, "%s: %s %s\\n", argv[0], "please add argument for last option specified,", "{argDest.upper()}");',
+                    '\t\t\t\texit(-1);',
+                    '\t\t\t}'
+                ]
         parserParts += [
             '\t\tif (strcmp("%s", argv[i]) == 0 || strcmp("%s", argv[i]) == 0)' %(arg['short'], arg['long']), 
             '\t\t{'] + parserActions + ['\t\t}']
-        printe(str(arg))
         
-    parserLines:list = ['int parseArgs(int argc, char **argv)', '{', '\tfor(int i = 1; i < argc; i++)', '\t{'] + parserParts + ['\t}', '}']
-    printe(str(spec['args']))
+    argsStructLines:list = [
+        'typedef struct args', 
+        '{'
+    ] + argsStructParts + [
+        '} args_t;'
+    ]
+    parserLines:list = [
+        'args_t parseArgs(int argc, char **argv)', 
+        '{', 
+        '\targs_t args;', 
+        '\tfor(int i = 1; i < argc; i++)', 
+        '\t{'
+    ] + parserParts + [
+        '\t}',
+        'return args;',
+        '}'
+    ]
+
+    sanitisedHeaderFile:str = headerFile.replace('.', '_')
+    headerLines = [
+        f'#ifndef {sanitisedHeaderFile.upper()}_H',
+        f'#define {sanitisedHeaderFile.upper()}_H',
+        '',
+        '#include <stdio.h>',
+        '#include <stdlib.h>',
+        '#include <stdbool.h>',
+        '#include <string.h>',
+        '#include <ctype.h>',
+        ''
+    ] + argsStructLines + [
+        '',
+        'args_t parseArgs(int argc, char **argv);',
+        '',
+        '#endif'
+    ]
 
     print('// %s' % argHeader, end='\n\n')
     print(argSpecSetup)
     print('\n'.join(helpLines))
     print('\n'.join(parserLines))
-    return -1
+
+    with open(headerFile, 'w+') as o:
+        o.write('\n'.join(headerLines))
+    return 0
 
 def toPython(spec:dict) -> int:
     printe('Python is not yet supported!')
@@ -168,8 +231,15 @@ def main(args:[str]) -> int:
     languageFlag:str = languageFlagList[0]
 
     spec:dict
-    with open(inputFile, 'r+') as i:
-        spec = json.load(i)
+    if inputFile != '-':
+        with open(inputFile, 'r+') as i:
+            spec = json.load(i)
+    else:
+        # Read all of stdin!
+        spec = json.loads(input())
+
+    cHeader:str = (spec['program'] + '_arg_parser.h') if inputFile != '-' else 'stdin_input'
+    printe(cHeader)
 
     schema:dict
     with open(schemaFile, 'r+') as i:
@@ -198,7 +268,7 @@ def main(args:[str]) -> int:
     if haskell:
         return toHaskell(spec)
     elif C:
-        return toC(spec)
+        return toC(spec, cHeader)
     elif python:
         return toPython(spec)
     else:
