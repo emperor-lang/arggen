@@ -1,6 +1,6 @@
 {
 	"$schema": "../argspec/arguments.schema.json",
-	"program": "test-program",
+	"program": "tester",
 	"args": [
 		{
 			"mandatory": false,
