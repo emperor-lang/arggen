@@ -34,7 +34,7 @@ arggen.py.c: arggen.pyx;
 arggen.pyx:;
 
 test_c: test.c t.c tester_arg_parser.h
-	gcc-8 -Wall -Werror -Wpedantic -pedantic-errors -fPIC -g $^ -o $@
+	gcc-8 -Wall -Werror -Wpedantic -pedantic-errors -g $^ -o $@
 
 t.c: ./spec.json arggen
 	./arggen -C ./spec.json > $@
