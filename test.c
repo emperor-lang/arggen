@@ -4,7 +4,11 @@
 
 int main(int argc, char **argv)
 {
-	args_t args = parseArgs(argc, argv);
-	printf("%s\n", args.verbose);
+	printf("%s\n", "Parsing arguments...");
+	args_t *args = parseArgs(argc, argv);
+	printf("%s\n", "Parsing arguments2...");
+	printf("%d\n", args->x);
 	return 0;
+
+	// TODO: initialise strings
 }
