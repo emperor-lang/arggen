@@ -137,7 +137,7 @@ def toC(spec:dict, headerFile:str) -> int:
         argType = argTypeMap[arg['type']]
         argsStructParts.append('\t%s %s;' % (argType, arg['dest']))
         if arg['type'] == 'flag':
-            parserActions = [f"\t\t\targs.{arg['dest']} = true;"]
+            parserActions = [f"\t\t\targs->{arg['dest']} = true;"]
         else:
             argGrabber:str = ''
             argDest:str = arg['dest']
@@ -150,7 +150,7 @@ def toC(spec:dict, headerFile:str) -> int:
             parserActions = [
                     '\t\t\tif (i + 1 < argc)',
                     '\t\t\t{', 
-                    f'\t\t\t\targs.{argDest} = {argGrabber};', 
+                    f'\t\t\t\targs->{argDest} = {argGrabber};', 
                     '\t\t\t}',
                     '\t\t\telse',
                     '\t\t\t{',
@@ -169,14 +169,14 @@ def toC(spec:dict, headerFile:str) -> int:
         '} args_t;'
     ]
     parserLines:list = [
-        'args_t parseArgs(int argc, char **argv)', 
+        'args_t *parseArgs(int argc, char **argv)', 
         '{', 
-        '\targs_t args;', 
-        '\tfor(int i = 1; i < argc; i++)', 
+        '\targs_t *args = (args_t*)malloc(sizeof(args_t));', 
+        '\tfor (int i = 1; i < argc; i++)', 
         '\t{'
     ] + parserParts + [
         '\t}',
-        'return args;',
+        '\treturn args;',
         '}'
     ]
 
@@ -193,7 +193,7 @@ def toC(spec:dict, headerFile:str) -> int:
         ''
     ] + argsStructLines + [
         '',
-        'args_t parseArgs(int argc, char **argv);',
+        'args_t *parseArgs(int argc, char **argv);',
         '',
         '#endif'
     ]
