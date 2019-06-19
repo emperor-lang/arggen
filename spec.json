@@ -4,14 +4,6 @@
 	"args": [
 		{
 			"mandatory": false,
-			"dest": "help",
-			"short": "-h",
-			"long": "--help",
-			"type": "flag",
-			"default": "False"
-		},
-		{
-			"mandatory": false,
 			"dest": "verbose",
 			"short" : "-v",
 			"long" : "--verbose",
