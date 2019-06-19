@@ -7,11 +7,11 @@ int main(int argc, char **argv)
 	printf("%s\n", "Parsing arguments...");
 	args_t *args = parseArgs(argc, argv);
 	printf("%s\n", "Done parsing arguments...");
-	printf("%d\n", args->x);
-
-	// TODO: initialise strings
-	// TODO: add a destructor
+	printf("%s => '%s'\n", "args->file", args->file);
+	printf("%s => '%s'\n", "args->out", args->out);
+	printf("%s => '%s'\n", "args->verbose", args->verbose);
+	printf("%s => '%d'\n", "args->x", args->x);
 
 	free(args);
 	return 0;
-}
+}	
