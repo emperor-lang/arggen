@@ -20,8 +20,8 @@ all: arggen test test_c;
 test: ./test.hs ./args.hs
 	$(HC) $^ -o $@
 
-./args.hs: arggen ./spec.json ../argspec/arguments.schema.json
-	./arggen -H ./spec.json > ./args.hs
+./args.hs: ./spec.json arggen ../argspec/arguments.schema.json
+	./arggen -H < $< > $@
 
 %.hs:;
 
@@ -37,7 +37,9 @@ test_c: test.c t.c tester_arg_parser.h
 	gcc-8 -Wall -Werror -Wpedantic -pedantic-errors -g $^ -o $@
 
 t.c: ./spec.json arggen
-	./arggen -C ./spec.json > $@
+	./arggen -C < $< > $@
+
+%.h:;
 
 %.json:;
 
