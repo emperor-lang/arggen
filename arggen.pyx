@@ -158,9 +158,12 @@ def toC(spec:dict, headerFile:str) -> int:
         parserActions:list = []
         argType = argTypeMap[arg['type']]
         argsStructParts.append('\t%s %s;' % (argType, arg['dest']))
-        helpParts.append((arg['short'] + (', ' if 'short' in arg and 'long' in arg else '') + arg['long'], arg['help']))
-        if arg['type'] == 'flag' or arg['type'] == 'help':
+        shortAndLongArePresent:bool = 'short' in arg and 'long' in arg
+        helpParts.append(((arg['short'] if 'short' in arg else '') + (', ' if shortAndLongArePresent else '') + (arg['long'] if 'long' in arg else ''), arg['help']))
+        if arg['type'] == 'flag':
             parserActions = [f"\t\t\targs->{arg['dest']} = true;"]
+        elif arg['type'] == 'help':
+            parserActions = ['\t\t\tshowHelp = true;']
         else:
             # TODO: Check that charactar input is unit length
             argGrabber:str = ''
@@ -186,8 +189,12 @@ def toC(spec:dict, headerFile:str) -> int:
                     # '\t\t\t\texit(-1);',
                     '\t\t\t}'
                 ]
+        shortHandler = ('strcmp("%s", argv[i])' % arg['short']) if 'short' in arg else ''
+        longHandler = ('strcmp("%s", argv[i])' % arg['long']) if 'long' in arg else ''
+        shortLongConnective = ' && ' if 'short' in arg and 'long' in arg else ''
         parserParts += [
-            '\t\t%sif (strcmp("%s", argv[i]) == 0 || strcmp("%s", argv[i]) == 0)' %('' if parserParts == [] else 'else ', arg['short'], arg['long']), 
+            # TODO: Allow a missing short or long option
+            '\t\t%sif (%s%s%s)' %('' if parserParts == [] else 'else ', shortHandler, shortLongConnective, longHandler), 
             '\t\t{'
         ] + parserActions + [
             '\t\t}'
@@ -202,17 +209,7 @@ def toC(spec:dict, headerFile:str) -> int:
         helpLines[i] = f'\t\tprintf("%s\\n", "{helpLines[i]}");'
 
     helpHandler:list = []
-    helpOptions:list = list(filter(lambda arg: arg['type'] == 'help', args))
-    helpGuard:str = ''
-    for helpOption in helpOptions:
-        if helpGuard != '':
-            helpGuard += ' && '
-        helpDest:str = helpOption['dest']
-        helpGuard += f'args->{helpDest}'
-    if helpOptions != []:
-        helpGuard = f'\tif (({helpGuard}) || failed)'
-    else:
-        helpGuard = '\tif (failed)'
+    helpGuard:str = '\tif (showHelp || failed)'
     helpLines.append('\t\texit(failed ? -1 : 0);')
     helpHandler = [helpGuard] + ['\t{'] + helpLines + ['\t}']
 
@@ -227,6 +224,7 @@ def toC(spec:dict, headerFile:str) -> int:
         '{', 
         '\targs_t *args = initArgs();', 
         '\tbool failed = false;',
+        '\tbool showHelp = false;',
         '\tfor (int i = 1; i < argc; i++)', 
         '\t{'
     ] + parserParts  + [
@@ -297,10 +295,6 @@ def standardise(spec:dict, schema:dict) -> dict:
         spec['args'] = []
     else:
         for arg in spec['args']:
-            if 'short' not in arg:
-                arg['short'] = ''
-            if 'long' not in arg:
-                arg['long'] = ''
             if 'help' not in arg:
                 arg['help'] = ''
 

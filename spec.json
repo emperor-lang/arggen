@@ -14,7 +14,6 @@
 		{
 			"mandatory": false,
 			"short": "-*",
-			"long": "--star",
 			"dest": "HELP_2",
 			"type": "help",
 			"default": "false",
@@ -41,8 +40,7 @@
 		{
 			"mandatory": true,
 			"dest": "x",
-			"short": "-x",
-			"long": "--asf",
+			"long": "--something-only-long",
 			"type": "int",
 			"default": "0",
 			"help": "set some X"
