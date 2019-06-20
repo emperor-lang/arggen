@@ -15,7 +15,8 @@ EXECUTABLE_INSTALL_LOCATION := /usr/bin/arggen
 args: test.hs args.hs
 	$(HC) $^ -o $@
 
-all: arggen test test_c;
+all: arggen test_c;
+# test
 
 test: ./test.hs ./args.hs
 	$(HC) $^ -o $@
@@ -36,8 +37,8 @@ arggen.pyx:;
 test_c: test.c t.c tester_arg_parser.h
 	gcc-8 -Wall -Werror -Wpedantic -pedantic-errors -g $^ -o $@
 
-t.c: ./spec.json arggen
-	./arggen -C < $< > $@
+t.c: ./spec.json arggen.pyx # arggen
+	python3 ./arggen.pyx -C < $< > $@
 
 %.h:;
 
