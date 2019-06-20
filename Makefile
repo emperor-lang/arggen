@@ -15,8 +15,8 @@ EXECUTABLE_INSTALL_LOCATION := /usr/bin/arggen
 args: test.hs args.hs
 	$(HC) $^ -o $@
 
-all: arggen test_c;
-# test
+all: test_c;
+# test arggen
 
 test: ./test.hs ./args.hs
 	$(HC) $^ -o $@
