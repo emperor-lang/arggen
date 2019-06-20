@@ -4,19 +4,39 @@
 	"args": [
 		{
 			"mandatory": false,
-			"dest": "verbose",
-			"short" : "-v",
-			"long" : "--verbose",
-			"type" : "string",
-			"default": "Hello, world!"
+			"short": "-h",
+			"long": "--help",
+			"dest": "HELP",
+			"type": "help",
+			"default": "false",
+			"help": "display a help message and exit"
 		},
 		{
-			"mandatory": true, 
+			"mandatory": false,
+			"short": "-*",
+			"long": "--star",
+			"dest": "HELP_2",
+			"type": "help",
+			"default": "false",
+			"help": "display a help message and exit"
+		},
+		{
+			"mandatory": false,
+			"dest": "verbose",
+			"short": "-v",
+			"long": "--verbose",
+			"type": "string",
+			"default": "Hello, world!",
+			"help": "set output verbosity"
+		},
+		{
+			"mandatory": true,
 			"dest": "file",
 			"short": "-i",
 			"long": "--input",
 			"type": "string",
-			"default": "Hello, world!"
+			"default": "Hello, world!",
+			"help": "set input file"
 		},
 		{
 			"mandatory": true,
@@ -24,7 +44,8 @@
 			"short": "-x",
 			"long": "--asf",
 			"type": "int",
-			"default": "0"
+			"default": "0",
+			"help": "set some X"
 		},
 		{
 			"mandatory": true,
@@ -32,7 +53,8 @@
 			"short": "-o",
 			"long": "--output-to",
 			"type": "string",
-			"default": "-"
+			"default": "-",
+			"help": "set output file"
 		}
 	]
 }
