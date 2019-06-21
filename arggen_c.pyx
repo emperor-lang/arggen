@@ -39,100 +39,6 @@ def wrapDefaultValue(value:str, valueType:str) -> str:
 
 # jsonschema.FillDefaultValidatingDraft7Validator = extendValidatorToAddDefaults(jsonschema.Draft7Validator)
 
-def isValidDest(dest:str) -> bool:
-    return len(dest) > 0 and 'a' < dest[0] and dest[0] < 'z' and ' ' not in dest
-
-def toHaskell(spec:dict) -> int:
-    typeMap:dict = {
-        'string' : 'String',
-        'char' : 'Char',
-        'int' : 'Integer',
-        'flag' : 'Bool',
-        'help': 'Bool'
-    }
-
-    imports:str = 'module Args where\nimport System.Environment\nimport Data.Char\nimport Data.List\n\nnewtype Error = Error String'
-
-    argSpecSetup:str = (
-    'parseArgv :: IO Args\n'
-    'parseArgv = do \n'
-    '    args <- getArgs \n'
-    '    return $ parseArgs\' args\n'
-    '\n'
-    'parseArgs :: [String] -> Args\n'
-    'parseArgs args = parseArgs\' args\n'
-    '\n'
-    'makeChar :: String -> Char\n'
-    'makeChar [] = error "Characters should be non-empty"\n'
-    'makeChar xs\n'
-    '    | length xs == 0 = error "Please give a character"\n'
-    '    | length xs >= 2 = error "Too many characters given, expected one here"\n'
-    '    | otherwise = xs!!0\n'
-    )
-
-    matchLines:[str] = ['parseArgs\' :: [String] -> Args']
-    validatorLines:[str] = ['validArg :: (String,String) -> Bool']
-    argTypes:str = ''
-    defaultArgs:[str] = []
-
-    for arg in spec['args']:
-        # if arg['optional']:
-        shortName:str = arg['short']
-        longName:str = arg['long']
-        dest:str = arg['dest']
-        argtype:str = typeMap[arg['type']]
-        default = arg['default']
-
-        if not isValidDest(dest):
-            printe(f'Invalid destination: "{dest}"')
-            return 1
-
-        getArgString:str
-        argGrabber:str
-        if argtype == 'Integer':
-            argGrabber = ':x'
-            getArgString = f'read x :: Integer'
-        elif argtype == 'Char':
-            argGrabber = ':c'
-            getArgString = f'makeChar c'
-        elif argtype == 'Bool':
-            argGrabber = ''
-            getArgString = 'True'
-        else:
-            argGrabber = ':u'
-            getArgString = 'u'
-        # if argtype == 'String':
-        # = f'read x :: {argtype} ' 
-        #  argtype != 'Char' else 'x'
-
-
-        matchLines.append(f'parseArgs\' ("{shortName}"{argGrabber}:args) = (parseArgs\' args) {{ {dest} = {getArgString} }}')
-        matchLines.append(f'parseArgs\' ("{longName}"{argGrabber}:args) = (parseArgs\' args) {{ {dest} = {getArgString} }}')
-        validatorLines.append(f'validArg ("{dest}",s) = isNum s')
-
-        formattedDefault = wrapDefaultValue(default, arg['type'])
-        defaultArgs.append(f'{dest} = {formattedDefault}')
-        argTypes += (', ' if argTypes != '' else '') + f'{dest} :: {argtype}'
-        # else:
-        #     matchLines.append(f'parseArgs\' (a:as) = parseArgs\' as ++ [("{dest}",a)]')
-        #     validatorLines.append(f'validArg ("{dest}",s) = isFileName s')
-            
-
-    matchLines.append('parseArgs\' [] = defaultArgs\n')
-    matchLines.append('parseArgs\' args = error $ "Could not parse rest of arguments: " ++ (intercalate " " args)')
-    validatorLines.append('validArg _ = True')
-    argTypes = f'data Args = Args {{ {argTypes} }}\n    deriving Show'
-    defaultArgsString:str = ', '.join(defaultArgs)
-    defaultArgsString = f'defaultArgs :: Args\ndefaultArgs = Args {{ {defaultArgsString} }}'
-
-    print('-- %s' % argHeader, end='\n\n')
-    print(imports)
-    print(argTypes, end='\n\n')
-    print(defaultArgsString)
-    print(argSpecSetup)
-    print('\n'.join(matchLines), end='\n\n')
-    # print('\n'.join(validatorLines))
-
 def toC(spec:dict, headerFile:str) -> int:
     args:list = spec['args']
     program = spec['program'] if 'program' in spec else 'asdf'
@@ -208,7 +114,6 @@ def toC(spec:dict, headerFile:str) -> int:
         ]
 
     usage.sort()
-    printe(usage)
     usageString:str = '[' + ' | '.join(usage) + ']'
 
     helpLines:list = []
@@ -304,15 +209,11 @@ def toC(spec:dict, headerFile:str) -> int:
     print('// %s' % argHeader, end='\n\n')
     print(argSpecSetup, end='\n\n')
     print('\n'.join(initialiserLines), end='\n\n')
-    print('\n'.join(parserLines), end='\n\n')
+    print('\n'.join(parserLines))
 
     with open(headerFile, 'w+') as o:
         o.write('\n'.join(headerLines))
     return 0
-
-def toPython(spec:dict) -> int:
-    printe('Python is not yet supported!')
-    return -1
 
 def standardise(spec:dict, schema:dict) -> dict:
     # Precondition: the spec has been validated against the schema
@@ -328,24 +229,6 @@ def standardise(spec:dict, schema:dict) -> dict:
     return spec
 
 def main(args:[str]) -> int:
-    if len(args) < 1:
-        printe('More arguments please!')
-        return -1
-
-    # inputFileList:list = list(filter(lambda arg: arg[0] != '-', args))
-    languageFlagList:list = list(filter(lambda arg: arg[0] == '-', args))
-
-    # if len(inputFileList) == 0:
-    #     printe('Please specify an input file')
-    #     exit(-1)
-    
-    if len(languageFlagList) == 0:
-        printe('Please specify a langauge flag')
-        return -1
-
-    # inputFile:str = inputFileList[0]
-    languageFlag:str = languageFlagList[0]
-
     spec:dict
     try:
         spec = json.load(sys.stdin)
@@ -368,30 +251,11 @@ def main(args:[str]) -> int:
         printe(str(ve))
         return -1
 
-    # TODO: Standardise input here!
     spec = standardise(spec, schema)
+
     cHeader:str = (spec['program'] + '_arg_parser.h')
 
-    haskell:bool = False
-    C:bool = False
-    python:bool = False
-
-    if languageFlag == '-H' or languageFlag == '--haskell':
-        haskell = True
-    elif languageFlag == '-C' or languageFlag == '--clang':
-        C = True
-    elif languageFlag == '-P' or languageFlag == '--python':
-        python = True
-
-    if haskell:
-        return toHaskell(spec)
-    elif C:
-        return toC(spec, cHeader)
-    elif python:
-        return toPython(spec)
-    else:
-        printe('No language specified')
-        return -1
+    return toC(spec, cHeader)
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

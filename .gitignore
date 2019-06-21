@@ -1,7 +1,9 @@
 *.py.c
 *.hi
 *.o
-arggen
+arggen_c
+arggen_haskell
+arggen_python
 args
 args.hs
 t_c
