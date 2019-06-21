@@ -2,6 +2,7 @@ import datetime
 import json
 import jsonschema
 import sys
+import re
 
 schemaFile:str = '../argspec/arguments.schema.json'
 
@@ -143,12 +144,15 @@ def toC(spec:dict, headerFile:str) -> int:
         'help' : 'bool'
     }
 
+    helpOpt:str = ''
+
     argSpecSetup:str = (
         f'#include "{headerFile}"'
     )
 
     # TODO: Add in help lines
     helpParts:list = []
+    usage:list = []
     parserParts:list = []
     argsStructParts:list = []
     headerLines:list = []
@@ -162,8 +166,12 @@ def toC(spec:dict, headerFile:str) -> int:
         helpParts.append(((arg['short'] if 'short' in arg else '') + (', ' if shortAndLongArePresent else '') + (arg['long'] if 'long' in arg else ''), arg['help']))
         if arg['type'] == 'flag':
             parserActions = [f"\t\t\targs->{arg['dest']} = true;"]
+            usage.append(arg['short'] if 'short' in arg else arg['long'])
         elif arg['type'] == 'help':
             parserActions = ['\t\t\tshowHelp = true;']
+            usage.append(arg['short'] if 'short' in arg else arg['long'])
+            if helpOpt == '':
+                helpOpt = arg['short'] if 'short' in arg else arg['long']
         else:
             # TODO: Check that charactar input is unit length
             argGrabber:str = ''
@@ -185,13 +193,12 @@ def toC(spec:dict, headerFile:str) -> int:
                     '\t\t\t{',
                     '\t\t\t\tfailed = true;',
                     '\t\t\t\tbreak;',
-                    # f'\t\t\t\tfprintf(stderr, "%s: %s %s\\n", argv[0], "please add argument for last option specified,", "{argDest.upper()}");',
-                    # '\t\t\t\texit(-1);',
                     '\t\t\t}'
                 ]
-        shortHandler = ('strcmp("%s", argv[i])' % arg['short']) if 'short' in arg else ''
-        longHandler = ('strcmp("%s", argv[i])' % arg['long']) if 'long' in arg else ''
-        shortLongConnective = ' && ' if 'short' in arg and 'long' in arg else ''
+            usage.append((arg['short'] if 'short' in arg else arg['long']) + ' ' + arg['dest'].upper())
+        shortHandler = ('strcmp("%s", argv[i]) == 0' % arg['short']) if 'short' in arg else ''
+        longHandler = ('strcmp("%s", argv[i]) == 0' % arg['long']) if 'long' in arg else ''
+        shortLongConnective = ' || ' if 'short' in arg and 'long' in arg else ''
         parserParts += [
             # TODO: Allow a missing short or long option
             '\t\t%sif (%s%s%s)' %('' if parserParts == [] else 'else ', shortHandler, shortLongConnective, longHandler), 
@@ -199,19 +206,38 @@ def toC(spec:dict, headerFile:str) -> int:
         ] + parserActions + [
             '\t\t}'
         ]
-        
+
+    usage.sort()
+    printe(usage)
+    usageString:str = '[' + ' | '.join(usage) + ']'
+
     helpLines:list = []
     maxLen:int = len(max(list(map(lambda part: part[0], helpParts)), key=len))
+    helpParts.sort(key=lambda part:re.sub(r'^--', r'-', part[0]))
     for (opt, hlp) in helpParts:
-        helpLines.append('\t' + opt + (' ' * (maxLen - len(opt) + 8)) + hlp)
+        helpLines.append((' ' * 8 if not opt.startswith('--') else ' ' * 7) + opt + (' ' * (maxLen - len(opt) + (8 if not opt.startswith('--') else 9))) + hlp)
     
     for i in range(len(helpLines)):
         helpLines[i] = f'\t\tprintf("%s\\n", "{helpLines[i]}");'
 
     helpHandler:list = []
     helpGuard:str = '\tif (showHelp || failed)'
-    helpLines.append('\t\texit(failed ? -1 : 0);')
-    helpHandler = [helpGuard] + ['\t{'] + helpLines + ['\t}']
+    helpHandler = [
+        '\tif (failed)',
+        '\t{',
+        f'\t\tfprintf(stderr, "%s %s %s\\n", "usage:", argv[0], "{usageString}");',
+        f'\t\tfprintf(stderr, "%s %s %s %s\\n", "Try `", argv[0], "{helpOpt}\'", "for more information");',
+        '\t\texit(-1);',
+        '\t}',
+        '',
+        '\tif (showHelp)',
+        '\t{',
+        f'\t\tfprintf(stderr, "%s %s %s\\n", "usage:", argv[0], "{usageString}");',
+        '\t\tprintf("%s\\n", "Options and arguments");'
+    ] + helpLines + [
+        '\t\texit(0);',
+        '\t}'
+    ]
 
     argsStructLines:list = [
         'typedef struct args', 
@@ -230,8 +256,9 @@ def toC(spec:dict, headerFile:str) -> int:
     ] + parserParts  + [
         '\t\telse',
         '\t\t{',
-        '\t\t\tfprintf(stderr, "%s %s\\n", "Unrecognised argument,", argv[i]);',
-        '\t\t\texit(-1);',
+        '\t\t\tfprintf(stderr, "%s %s\\n", "Unknown option:", argv[i]);',
+        '\t\t\tfailed = true;',
+        '\t\t\tbreak;',
         '\t\t}',
         '\t}',
         '\t'
