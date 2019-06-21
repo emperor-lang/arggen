@@ -4,3 +4,8 @@
 arggen
 args
 args.hs
+t_c
+test_c
+tester_arg_parser.h
+test
+t.c
