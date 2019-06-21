@@ -15,30 +15,30 @@ EXECUTABLE_INSTALL_LOCATION := /usr/bin/arggen
 args: test.hs args.hs
 	$(HC) $^ -o $@
 
-all: test_c;
+all: arggen_c arggen_haskell arggen_python test;
 # test arggen
 
 test: ./test.hs ./args.hs
 	$(HC) $^ -o $@
 
-./args.hs: ./spec.json arggen ../argspec/arguments.schema.json
-	./arggen -H < $< > $@
+./args.hs: ./spec.json arggen_haskell ../argspec/arguments.schema.json
+	./arggen_haskell < $< > $@
 
 %.hs:;
 
-arggen: arggen.py.c
+%: %.py.c
 	$(CC) $(CFLAGS) $^ -o $@ $(CLIBS)
 
-arggen.py.c: arggen.pyx; 
-	$(CYTHON) $(CYTHONFLAGS) $< -o $@
+%.py.c: %.pyx; 
+	$(CYTHON) $(CYTHONFLAGS) $^ -o $@
 
-arggen.pyx:;
+%.pyx:;
 
 test_c: test.c t.c tester_arg_parser.h
 	gcc-8 -Wall -Werror -Wpedantic -pedantic-errors -g $^ -o $@
 
-t.c: ./spec.json arggen.pyx # arggen
-	python3 ./arggen.pyx -C < $< > $@
+t.c: ./spec.json arggen_c.pyx # arggen
+	python3 ./arggen_c.pyx < $< > $@
 
 %.h:;
 
@@ -49,8 +49,10 @@ install: arggen
 
 clean:
 	-@$(RM) argparser			2>/dev/null || true
-	-@$(RM) arggen 				2>/dev/null || true
-	-@$(RM) arggen.py.c			2>/dev/null || true
+	-@$(RM) arggen_c 			2>/dev/null || true
+	-@$(RM) arggen_haskell		2>/dev/null || true
+	-@$(RM) arggen_python		2>/dev/null || true
+	-@$(RM) *.py.c				2>/dev/null || true
 	-@$(RM) test				2>/dev/null || true
 	-@$(RM) *.hi				2>/dev/null || true
 	-@$(RM) *.o					2>/dev/null || true
