@@ -48,13 +48,17 @@ def toHaskell(spec:dict) -> int:
         'help': 'Bool'
     }
 
-    imports:str = 'module Args where\nimport System.Environment\nimport Data.Char\nimport Data.List\n\nnewtype Error = Error String'
+    imports:str = 'module Args where\nimport Control.Monad\nimport System.Environment\nimport Data.Char\nimport Data.List\n\nnewtype Error = Error String'
 
     argSpecSetup:str = (
     'parseArgv :: IO Args\n'
-    'parseArgv = do \n'
-    '    args <- getArgs \n'
-    '    return $ parseArgs\' args\n'
+    'parseArgv = do\n'
+    '    args <- getArgs\n'
+    '    let arguments = parseArgs\' args\n'
+    '    when (__help__ arguments) $ putStrLn "Some help here"\n'
+    # '    else\n'
+    # '        putStrLn "Nothing"\n'
+    '    return $ arguments\n'
     '\n'
     'parseArgs :: [String] -> Args\n'
     'parseArgs args = parseArgs\' args\n'
@@ -62,61 +66,64 @@ def toHaskell(spec:dict) -> int:
     'makeChar :: String -> Char\n'
     'makeChar [] = error "Characters should be non-empty"\n'
     'makeChar xs\n'
-    '    | length xs == 0 = error "Please give a character"\n'
+    '    | null xs = error "Please give a character"\n'
     '    | length xs >= 2 = error "Too many characters given, expected one here"\n'
-    '    | otherwise = xs!!0\n'
+    '    | otherwise = head xs\n'
     )
 
-    matchLines:[str] = ['parseArgs\' :: [String] -> Args']
+    matchLines:[str] = ['parseArgs\' :: String -> [String] -> Args']
     validatorLines:[str] = ['validArg :: (String,String) -> Bool']
-    argTypes:str = ''
-    defaultArgs:[str] = []
+    argTypes:str = '__help__ :: Bool'
+    defaultArgs:[str] = ['__help__ = False']
+    helpFlag:str = ''
 
     for arg in spec['args']:
-        # if arg['optional']:
-        shortName:str = arg['short']
-        longName:str = arg['long']
-        dest:str = arg['dest']
+        dest:str = arg['dest'] if arg['type'] != 'help' else '__help__'
         argtype:str = typeMap[arg['type']]
         default = arg['default']
 
-        if not isValidDest(dest):
-            printe(f'Invalid destination: "{dest}"')
-            return 1
-
         getArgString:str
         argGrabber:str
-        if argtype == 'Integer':
+        if arg['type'] == 'int':
             argGrabber = ':x'
             getArgString = f'read x :: Integer'
-        elif argtype == 'Char':
+        elif arg['type'] == 'char':
             argGrabber = ':c'
             getArgString = f'makeChar c'
-        elif argtype == 'Bool':
+        elif arg['type'] == 'flag':
             argGrabber = ''
             getArgString = 'True'
+        elif arg['type'] == 'help':
+            argGrabber = ''
+            getArgString = 'True'
+            if helpFlag == '':
+                helpFlag = arg['short'] if 'short' in arg else arg['long']
+        elif arg['type'] == 'string':
+            argGrabber = ':s'
+            getArgString = 's'
         else:
-            argGrabber = ':u'
-            getArgString = 'u'
-        # if argtype == 'String':
-        # = f'read x :: {argtype} ' 
-        #  argtype != 'Char' else 'x'
+            printe('Unrecognised argument type: %s' % arg['type'])
+            return -1
 
+        shortName:str = ''
+        if 'short' in arg:
+            shortName = arg['short']
+            matchLines.append(f'parseArgs\' p ("{shortName}"{argGrabber}:args) = (parseArgs\' p args) {{ {dest} = {getArgString} }}')
 
-        matchLines.append(f'parseArgs\' ("{shortName}"{argGrabber}:args) = (parseArgs\' args) {{ {dest} = {getArgString} }}')
-        matchLines.append(f'parseArgs\' ("{longName}"{argGrabber}:args) = (parseArgs\' args) {{ {dest} = {getArgString} }}')
+        longName:str = ''
+        if 'long' in arg:
+            longName = arg['long']
+            matchLines.append(f'parseArgs\' p ("{longName}"{argGrabber}:args) = (parseArgs\' p args) {{ {dest} = {getArgString} }}')
+        
         validatorLines.append(f'validArg ("{dest}",s) = isNum s')
 
-        formattedDefault = wrapDefaultValue(default, arg['type'])
-        defaultArgs.append(f'{dest} = {formattedDefault}')
-        argTypes += (', ' if argTypes != '' else '') + f'{dest} :: {argtype}'
-        # else:
-        #     matchLines.append(f'parseArgs\' (a:as) = parseArgs\' as ++ [("{dest}",a)]')
-        #     validatorLines.append(f'validArg ("{dest}",s) = isFileName s')
-            
+        if arg['type'] != 'help':
+            formattedDefault = wrapDefaultValue(default, arg['type'])
+            defaultArgs.append(f'{dest} = {formattedDefault}')
+            argTypes += (', ' if argTypes != '' else '') + f'{dest} :: {argtype}'
 
-    matchLines.append('parseArgs\' [] = defaultArgs\n')
-    matchLines.append('parseArgs\' args = error $ "Could not parse rest of arguments: " ++ (intercalate " " args)')
+    matchLines.append('parseArgs\' _ [] = defaultArgs')
+    matchLines.append(f'parseArgs\' p (arg:args) = error $ "Unrecognised option: " ++ arg ++ "\\ntry `" ++ p ++ " {helpFlag}\' for more information"')
     validatorLines.append('validArg _ = True')
     argTypes = f'data Args = Args {{ {argTypes} }}\n    deriving Show'
     defaultArgsString:str = ', '.join(defaultArgs)
@@ -127,7 +134,7 @@ def toHaskell(spec:dict) -> int:
     print(argTypes, end='\n\n')
     print(defaultArgsString)
     print(argSpecSetup)
-    print('\n'.join(matchLines), end='\n\n')
+    print('\n'.join(matchLines))
     # print('\n'.join(validatorLines))
 
 def standardise(spec:dict, schema:dict) -> dict:
