@@ -70,6 +70,9 @@ def toC(spec:dict, headerFile:str) -> int:
         argsStructParts.append('\t%s %s;' % (argType, arg['dest']))
         shortAndLongArePresent:bool = 'short' in arg and 'long' in arg
         helpParts.append(((arg['short'] if 'short' in arg else '') + (', ' if shortAndLongArePresent else '') + (arg['long'] if 'long' in arg else ''), arg['help']))
+        argDest:str = arg['dest']
+        defaultValue:str = wrapDefaultValue(arg['default'], arg['type'])
+        initialiserLines.append(f'\targs->{argDest} = {defaultValue};')
         if arg['type'] == 'flag':
             parserActions = [f"\t\t\targs->{arg['dest']} = true;"]
             usage.append(arg['short'] if 'short' in arg else arg['long'])
@@ -81,9 +84,6 @@ def toC(spec:dict, headerFile:str) -> int:
         else:
             # TODO: Check that charactar input is unit length
             argGrabber:str = ''
-            argDest:str = arg['dest']
-            defaultValue:str = wrapDefaultValue(arg['default'], arg['type'])
-            initialiserLines.append(f'\targs->{argDest} = {defaultValue};')
             if arg['type'] == 'string':
                 argGrabber = 'argv[++i]'
             elif arg['type'] == 'char':
