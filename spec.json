@@ -67,6 +67,7 @@
 		{
 			"mandatory": true,
 			"dest": "x",
+			"short": "-s",
 			"long": "--something-only-long",
 			"type": "int",
 			"default": "0",

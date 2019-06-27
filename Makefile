@@ -15,7 +15,8 @@ EXECUTABLE_INSTALL_LOCATION := /usr/bin/arggen
 args: test.hs args.hs
 	$(HC) $^ -o $@
 
-all: arggen_c arggen_haskell arggen_python test;
+all: arggen_c arggen_haskell arggen_python test_python.args.py;
+# test;
 # test arggen
 
 test: ./test.hs ./args.hs
@@ -25,6 +26,9 @@ test: ./test.hs ./args.hs
 	./arggen_haskell < $< > $@
 
 %.hs:;
+
+%.args.py: ./spec.json arggen_python
+	./arggen_python < $< #> $@
 
 %: %.py.c
 	$(CC) $(CFLAGS) $^ -o $@ $(CLIBS)
