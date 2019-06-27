@@ -1,6 +1,27 @@
 {
 	"$schema": "../argspec/arguments.schema.json",
 	"program": "tester",
+	"description": "A tester program for programs which use parts of argspec",
+	"version": "1.2.2",
+	"date": "27/01/2019",
+	"licence": "GPL+ asdfdfsafdafjkdslahfjkdsahflk",
+	"bugs": "Please file any bugs or issues at <github.com/emperor-lang/argspec/issues>",
+	"seeAlso": [
+		{
+			"manLocation": 1,
+			"name": "gcc"
+		},
+		{
+			"manLocation": 1,
+			"name": "alex"
+		},
+		{
+			"manLocation": 1,
+			"name": "happy"
+		}
+	],
+	"longDescription": "This program does not actually exist. But that doesn't mean that it can't be useful though. Perhaps in another life it will evolve in to something useful, but that certainly isn't this one. Anyway, thanks for reading this far, you just made my day :)",
+	"author": "The author would like to remain anonymous or something",
 	"args": [
 		{
 			"mandatory": false,
@@ -25,6 +46,12 @@
 			"short": "-v",
 			"long": "--verbose",
 			"type": "string",
+			"choices": [
+				"0",
+				"1",
+				"2",
+				"3"
+			],
 			"default": "Hello, world!",
 			"help": "set output verbosity"
 		},
