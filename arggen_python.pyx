@@ -4,7 +4,8 @@ import jsonschema
 import sys
 import re
 
-schemaFile:str = '../argspec/arguments.schema.json'
+schemaFile:str = '../argspec/coder-arguments-schema.json'
+shebang:str = '#!/usr/bin/python3'
 
 arggenVersion:str = 'v1.0.0'
 
@@ -40,8 +41,10 @@ def wrapDefaultValue(value:str, valueType:str) -> str:
 # jsonschema.FillDefaultValidatingDraft7Validator = extendValidatorToAddDefaults(jsonschema.Draft7Validator)
 
 def toPython(spec:dict) -> int:
-    printe('Python is not yet supported!')
-    return -1
+
+    print(shebang, end='\n\n')
+    print('# ' + argHeader, end='\n\n')
+    return 0
 
 def standardise(spec:dict, schema:dict) -> dict:
     # Precondition: the spec has been validated against the schema

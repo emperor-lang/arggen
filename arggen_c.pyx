@@ -4,7 +4,7 @@ import jsonschema
 import sys
 import re
 
-schemaFile:str = '../argspec/arguments.schema.json'
+schemaFile:str = '../argspec/coder-arguments-schema.json'
 
 arggenVersion:str = 'v1.0.0'
 
