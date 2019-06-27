@@ -47,21 +47,26 @@ def wrapDefaultValue(value:str, valueType:str) -> str:
 def toPython(spec:dict) -> int:
     argumentLines:[str] = []
     for arg in spec['args']:
-        parserOptions:str = ', '.join(([f"'{arg['short']}'"] if 'short' in arg else []) + ([f"'{arg['long']}'"] if 'long' in arg else []))
+        parserOptions:[str] = ([f"'{arg['short']}'"] if 'short' in arg else []) + ([f"'{arg['long']}'"] if 'long' in arg else [])
         if 'help' in arg:
-            parserOptions += f", help='{arg['help']}'"
+            parserOptions.append(f", help='{arg['help']}'")
         if 'dest' in arg:
-            parserOptions += f", dest='{arg['dest']}'"
+            parserOptions.append(f", dest='{arg['dest']}'")
         if arg['type'] == 'string':
+            parserOptions.append("nargs='1'")
         elif arg['type'] == 'int':
+            parserOptions.append("nargs='1'")
         elif arg['type'] == 'char':
+            parserOptions.append("nargs='1'")
         elif arg['type'] == 'bool':
+            parserOptions.append("nargs='1'")
         elif arg['type'] == 'flag':
-            parserOptions
+            parserOptions.append("nargs='1'")
+            parserOptions.append("action='store_true'")
         # Handle the type
         # Handle the default value
         # Handle the destination
-        argumentLine:str = f'parser.add_argument({parserOptions})'
+        argumentLine:str = f'parser.add_argument({", ".join(parserOptions)})'
         argumentLines.append(argumentLine)
 
     parserMethodHeader:str = 'def parseArgs(args:[str]) -> argparse.Namespace:'
