@@ -1,5 +1,5 @@
 {
-	"$schema": "../argspec/arguments.schema.json",
+	"$schema": "https://github.com/emperor-lang/argspec/releases/download/v1.0.0/coder-arguments-schema.json",
 	"program": "tester",
 	"description": "A tester program for programs which use parts of argspec",
 	"version": "1.2.2",
