@@ -81,6 +81,15 @@
 			"type": "string",
 			"default": "-",
 			"help": "set output file"
+		},
+		{
+			"mandatory": true,
+			"dest": "dash",
+			"short": "-d",
+			"long": "--dash",
+			"type": "char",
+			"default": "x",
+			"help": "Input a single character for special purposes..."
 		}
 	]
 }
