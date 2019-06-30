@@ -177,4 +177,8 @@ def main(args:[str]) -> int:
     return toHaskell(spec)
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except KeyboardInterrupt as ke:
+        printe(ke)
+        sys.exit(1)
